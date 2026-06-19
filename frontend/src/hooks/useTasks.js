@@ -145,16 +145,40 @@ export function useTasks({ socketRef }) {
    */
   const moveTask = useCallback(
     (id, column) => {
+      const task = state.tasks.find((t) => t.id === id);
+      if (task) {
+        dispatch({
+          type: "TASK_MOVED",
+          payload: { ...task, column },
+        });
+      }
+
       return new Promise((resolve) => {
         const socket = socketRef?.current;
         if (!socket?.connected) {
+          if (task) {
+            dispatch({
+              type: "TASK_MOVED",
+              payload: task,
+            });
+          }
           resolve({ success: false, error: "Not connected to server." });
           return;
         }
-        socket.emit("task:move", { id, column }, resolve);
+        socket.emit("task:move", { id, column }, (response) => {
+          if (!response || !response.success) {
+            if (task) {
+              dispatch({
+                type: "TASK_MOVED",
+                payload: task,
+              });
+            }
+          }
+          resolve(response);
+        });
       });
     },
-    [socketRef]
+    [socketRef, state.tasks]
   );
 
   /**
