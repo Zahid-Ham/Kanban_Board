@@ -40,80 +40,76 @@ function TaskCard({ task, index, onEdit, onDelete }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           style={provided.draggableProps.style}
-          className="task-card-wrapper"
+          className={`task-card ${snapshot.isDragging ? "dragging" : ""}`}
+          data-testid="task-card"
+          data-task-id={task.id}
+          aria-label={`Task: ${task.title}`}
         >
+          {/* Priority accent bar */}
           <div
-            className={`task-card ${snapshot.isDragging ? "dragging" : ""}`}
-            data-testid="task-card"
-            data-task-id={task.id}
-            aria-label={`Task: ${task.title}`}
-          >
-            {/* Priority accent bar */}
-            <div
-              className="task-priority-bar"
-              style={{ background: priority.color }}
-              aria-hidden="true"
-            />
+            className="task-priority-bar"
+            style={{ background: priority.color }}
+            aria-hidden="true"
+          />
 
-            {/* Card Body */}
-            <div className="task-body">
-              <h3 className="task-title" data-testid="task-title">
-                {task.title}
-              </h3>
+          {/* Card Body */}
+          <div className="task-body">
+            <h3 className="task-title" data-testid="task-title">
+              {task.title}
+            </h3>
 
-              {task.description && (
-                <p className="task-description" data-testid="task-description">
-                  {task.description.length > 100
-                    ? task.description.slice(0, 100) + "…"
-                    : task.description}
-                </p>
+            {task.description && (
+              <p className="task-description" data-testid="task-description">
+                {task.description.length > 100
+                  ? task.description.slice(0, 100) + "…"
+                  : task.description}
+              </p>
+            )}
+
+            {/* Tags Row */}
+            <div className="task-tags">
+              <span
+                className="task-priority-badge"
+                style={{ color: priority.color, borderColor: priority.color }}
+                data-testid="task-priority-badge"
+              >
+                {priority.label}
+              </span>
+              <span
+                className="task-category-badge"
+                data-testid="task-category-badge"
+              >
+                {category.label}
+              </span>
+              {task.attachments?.length > 0 && (
+                <span className="task-attachment-badge" title={`${task.attachments.length} attachment(s)`}>
+                  📎 {task.attachments.length}
+                </span>
               )}
-
-              {/* Tags Row */}
-              <div className="task-tags">
-                <span
-                  className="task-priority-badge"
-                  style={{ color: priority.color, borderColor: priority.color }}
-                  data-testid="task-priority-badge"
-                >
-                  {priority.label}
-                </span>
-                <span
-                  className="task-category-badge"
-                  data-testid="task-category-badge"
-                >
-                  {category.label}
-                </span>
-                {task.attachments?.length > 0 && (
-                  <span className="task-attachment-badge" title={`${task.attachments.length} attachment(s)`}>
-                    📎 {task.attachments.length}
-                  </span>
-                )}
-              </div>
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="task-actions">
-              <button
-                type="button"
-                className="task-action-btn edit-btn"
-                onClick={() => onEdit(task)}
-                aria-label={`Edit task: ${task.title}`}
-                data-testid="edit-task-btn"
-              >
-                ✏️
-              </button>
-              <button
-                type="button"
-                className={`task-action-btn delete-btn ${showConfirm ? "confirm" : ""}`}
-                onClick={handleDelete}
-                aria-label={showConfirm ? "Confirm delete" : `Delete task: ${task.title}`}
-                data-testid="delete-task-btn"
-                title={showConfirm ? "Click again to confirm" : "Delete task"}
-              >
-                {showConfirm ? "⚠" : "🗑️"}
-              </button>
-            </div>
+          {/* Actions */}
+          <div className="task-actions">
+            <button
+              type="button"
+              className="task-action-btn edit-btn"
+              onClick={() => onEdit(task)}
+              aria-label={`Edit task: ${task.title}`}
+              data-testid="edit-task-btn"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              className={`task-action-btn delete-btn ${showConfirm ? "confirm" : ""}`}
+              onClick={handleDelete}
+              aria-label={showConfirm ? "Confirm delete" : `Delete task: ${task.title}`}
+              data-testid="delete-task-btn"
+              title={showConfirm ? "Click again to confirm" : "Delete task"}
+            >
+              {showConfirm ? "⚠" : "🗑️"}
+            </button>
           </div>
         </div>
       )}
