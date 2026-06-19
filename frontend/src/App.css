@@ -430,8 +430,8 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: grab;
-  /* Avoid transition: all because it causes lag in drag and drop (transform transitions) */
-  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  /* Avoid transition: all or transition: transform because they conflict with dnd positioning and drop animations */
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
   position: relative;
 }
 
@@ -445,6 +445,7 @@ body {
 .task-card.dragging {
   cursor: grabbing;
   box-shadow: var(--shadow-lg), var(--shadow-glow);
+  transform: rotate(2deg) scale(1.03);
   border-color: var(--accent-indigo);
   opacity: 0.95;
   /* Disable transition entirely during dragging for instant response and smooth tracking */
