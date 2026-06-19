@@ -32,13 +32,18 @@ function tasksReducer(state, action) {
         ),
       };
 
-    case "TASK_MOVED":
+    case "TASK_MOVED": {
+      const existing = state.tasks.find((t) => t.id === action.payload.id);
+      if (existing && existing.column === action.payload.column) {
+        return state;
+      }
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.payload.id ? action.payload : t
         ),
       };
+    }
 
     case "TASK_DELETED":
       return {
