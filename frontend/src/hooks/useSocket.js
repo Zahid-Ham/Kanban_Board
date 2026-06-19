@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 /**
  * @returns {{ socket: Socket|null, isConnected: boolean, connectionError: string|null }}
