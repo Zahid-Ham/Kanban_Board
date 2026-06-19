@@ -308,8 +308,7 @@ body {
 .kanban-column {
   display: flex;
   flex-direction: column;
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.9); /* Slightly more opaque background to maintain premium look without blur */
   border: 1px solid var(--border-default);
   border-top: 3px solid var(--column-color, var(--accent-indigo));
   border-radius: var(--radius-lg);
