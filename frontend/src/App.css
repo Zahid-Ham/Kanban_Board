@@ -389,11 +389,11 @@ body {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   min-height: 120px;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   transition: background var(--transition-fast), border-color var(--transition-fast);
   border: 2px solid transparent;
+  position: relative; /* Keep absolute empty-column centered */
 }
 
 .task-list.drag-over {
@@ -407,7 +407,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 32px 16px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
   color: var(--text-muted);
   font-size: 0.85rem;
   text-align: center;
@@ -429,6 +433,8 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: grab;
+  /* Use margin-bottom instead of flex gap because react-beautiful-dnd measures margins for drag spacing */
+  margin-bottom: 10px;
   /* Avoid transition: all or transition: transform because they conflict with dnd positioning and drop animations */
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
   position: relative;

@@ -32,18 +32,21 @@ function tasksReducer(state, action) {
         ),
       };
 
-    case "TASK_MOVED": {
-      const existing = state.tasks.find((t) => t.id === action.payload.id);
-      if (existing && existing.column === action.payload.column) {
-        return state;
-      }
+    case "TASK_MOVED":
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.payload.id ? action.payload : t
         ),
       };
-    }
+
+    case "OPTIMISTIC_TASK_MOVED":
+      return {
+        ...state,
+        tasks: state.tasks.map((t) =>
+          t.id === action.payload.id ? { ...t, column: action.payload.column } : t
+        ),
+      };
 
     case "TASK_DELETED":
       return {
@@ -67,15 +70,14 @@ function tasksReducer(state, action) {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 /**
- * @param {{ socketRef: React.MutableRefObject }} param0
+ * @param {{ socket: Object }} param0
  * @returns {{ tasks, isLoading, error, createTask, updateTask, moveTask, deleteTask, clearError }}
  */
-export function useTasks({ socketRef }) {
+export function useTasks({ socket }) {
   const [state, dispatch] = useReducer(tasksReducer, initialState);
 
   // ── Register Socket Event Listeners ────────────────────────────────────────
   useEffect(() => {
-    const socket = socketRef?.current;
     if (!socket) return;
 
     /** Sync all tasks on initial connection */
@@ -101,7 +103,7 @@ export function useTasks({ socketRef }) {
       socket.off("task:moved", handleMoved);
       socket.off("task:deleted", handleDeleted);
     };
-  }, [socketRef]);
+  }, [socket]);
 
   // ── Action Creators ────────────────────────────────────────────────────────
   /**
@@ -112,7 +114,6 @@ export function useTasks({ socketRef }) {
   const createTask = useCallback(
     (taskData) => {
       return new Promise((resolve) => {
-        const socket = socketRef?.current;
         if (!socket?.connected) {
           resolve({ success: false, error: "Not connected to server." });
           return;
@@ -120,7 +121,7 @@ export function useTasks({ socketRef }) {
         socket.emit("task:create", taskData, resolve);
       });
     },
-    [socketRef]
+    [socket]
   );
 
   /**
@@ -131,7 +132,6 @@ export function useTasks({ socketRef }) {
   const updateTask = useCallback(
     (taskData) => {
       return new Promise((resolve) => {
-        const socket = socketRef?.current;
         if (!socket?.connected) {
           resolve({ success: false, error: "Not connected to server." });
           return;
@@ -139,7 +139,7 @@ export function useTasks({ socketRef }) {
         socket.emit("task:update", taskData, resolve);
       });
     },
-    [socketRef]
+    [socket]
   );
 
   /**
@@ -150,40 +150,18 @@ export function useTasks({ socketRef }) {
    */
   const moveTask = useCallback(
     (id, column) => {
-      const task = state.tasks.find((t) => t.id === id);
-      if (task) {
-        dispatch({
-          type: "TASK_MOVED",
-          payload: { ...task, column },
-        });
-      }
+      // Perform optimistic update locally
+      dispatch({ type: "OPTIMISTIC_TASK_MOVED", payload: { id, column } });
 
       return new Promise((resolve) => {
-        const socket = socketRef?.current;
         if (!socket?.connected) {
-          if (task) {
-            dispatch({
-              type: "TASK_MOVED",
-              payload: task,
-            });
-          }
           resolve({ success: false, error: "Not connected to server." });
           return;
         }
-        socket.emit("task:move", { id, column }, (response) => {
-          if (!response || !response.success) {
-            if (task) {
-              dispatch({
-                type: "TASK_MOVED",
-                payload: task,
-              });
-            }
-          }
-          resolve(response);
-        });
+        socket.emit("task:move", { id, column }, resolve);
       });
     },
-    [socketRef, state.tasks]
+    [socket]
   );
 
   /**
@@ -194,7 +172,6 @@ export function useTasks({ socketRef }) {
   const deleteTask = useCallback(
     (id) => {
       return new Promise((resolve) => {
-        const socket = socketRef?.current;
         if (!socket?.connected) {
           resolve({ success: false, error: "Not connected to server." });
           return;
@@ -202,7 +179,7 @@ export function useTasks({ socketRef }) {
         socket.emit("task:delete", { id }, resolve);
       });
     },
-    [socketRef]
+    [socket]
   );
 
   const clearError = useCallback(() => dispatch({ type: "CLEAR_ERROR" }), []);

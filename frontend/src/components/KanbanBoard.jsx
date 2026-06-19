@@ -19,9 +19,9 @@ import ConnectionStatus from "./ConnectionStatus";
  * It wires together the WebSocket hooks, DnD context, and child components.
  */
 function KanbanBoard() {
-  const { socketRef, isConnected, connectionError } = useSocket();
+  const { socket, isConnected, connectionError } = useSocket();
   const { tasks, isLoading, createTask, updateTask, moveTask, deleteTask } = useTasks({
-    socketRef,
+    socket,
   });
 
   const [modalState, setModalState] = useState({

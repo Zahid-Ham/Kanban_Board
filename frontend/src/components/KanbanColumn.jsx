@@ -83,24 +83,23 @@ function KanbanColumn({ column, tasks, onEditTask, onDeleteTask, onAddTask }) {
                 : {}
             }
           >
-            {tasks.length === 0 ? (
+            {tasks.map((task, index) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                index={index}
+                onEdit={onEditTask}
+                onDelete={onDeleteTask}
+              />
+            ))}
+            {provided.placeholder}
+            {tasks.length === 0 && (
               <div className="empty-column" data-testid="empty-column">
                 <span className="empty-icon" aria-hidden="true">📭</span>
                 <span>No tasks yet</span>
                 <span className="empty-hint">Drop here or click + to add</span>
               </div>
-            ) : (
-              tasks.map((task, index) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  index={index}
-                  onEdit={onEditTask}
-                  onDelete={onDeleteTask}
-                />
-              ))
             )}
-            {provided.placeholder}
           </div>
         )}
       </Droppable>
