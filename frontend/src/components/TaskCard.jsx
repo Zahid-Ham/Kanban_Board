@@ -32,6 +32,16 @@ function TaskCard({ task, index, onEdit, onDelete }) {
     }
   };
 
+  const getStyle = (style, snapshot) => {
+    if (!snapshot.isDragging) return style;
+    return {
+      ...style,
+      transform: style?.transform
+        ? `${style.transform} rotate(2deg) scale(1.03)`
+        : "rotate(2deg) scale(1.03)",
+    };
+  };
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -39,6 +49,7 @@ function TaskCard({ task, index, onEdit, onDelete }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          style={getStyle(provided.draggableProps.style, snapshot)}
           className={`task-card ${snapshot.isDragging ? "dragging" : ""}`}
           data-testid="task-card"
           data-task-id={task.id}

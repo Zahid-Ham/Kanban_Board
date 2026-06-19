@@ -313,7 +313,7 @@ body {
   border: 1px solid var(--border-default);
   border-top: 3px solid var(--column-color, var(--accent-indigo));
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: var(--shadow-md);
   min-height: 200px;
   transition: box-shadow var(--transition-med);
@@ -430,7 +430,8 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: grab;
-  transition: all var(--transition-fast);
+  /* Avoid transition: all because it causes lag in drag and drop (transform transitions) */
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
   position: relative;
 }
 
@@ -444,9 +445,10 @@ body {
 .task-card.dragging {
   cursor: grabbing;
   box-shadow: var(--shadow-lg), var(--shadow-glow);
-  transform: rotate(2deg) scale(1.03);
   border-color: var(--accent-indigo);
   opacity: 0.95;
+  /* Disable transition entirely during dragging for instant response and smooth tracking */
+  transition: none !important;
 }
 
 /* Priority accent bar */
