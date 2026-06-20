@@ -32,21 +32,17 @@ function tasksReducer(state, action) {
         ),
       };
 
-    case "TASK_MOVED":
+    case "TASK_MOVED": {
+      // Avoid no-op re-renders if the column hasn't changed
+      const existing = state.tasks.find((t) => t.id === action.payload.id);
+      if (existing && existing.column === action.payload.column) return state;
       return {
         ...state,
         tasks: state.tasks.map((t) =>
           t.id === action.payload.id ? action.payload : t
         ),
       };
-
-    case "OPTIMISTIC_TASK_MOVED":
-      return {
-        ...state,
-        tasks: state.tasks.map((t) =>
-          t.id === action.payload.id ? { ...t, column: action.payload.column } : t
-        ),
-      };
+    }
 
     case "TASK_DELETED":
       return {
@@ -87,6 +83,7 @@ export function useTasks({ socket }) {
 
     const handleCreated = (task) => dispatch({ type: "TASK_CREATED", payload: task });
     const handleUpdated = (task) => dispatch({ type: "TASK_UPDATED", payload: task });
+    // Server broadcast for moves (handles other clients, or confirmation for this client)
     const handleMoved = (task) => dispatch({ type: "TASK_MOVED", payload: task });
     const handleDeleted = ({ id }) => dispatch({ type: "TASK_DELETED", payload: { id } });
 
@@ -144,15 +141,15 @@ export function useTasks({ socket }) {
 
   /**
    * Moves a task to a different column.
+   * NOTE: The optimistic UI update is handled by KanbanBoard's local displayTasks
+   * state so it fires synchronously inside onDragEnd — exactly what @hello-pangea/dnd
+   * requires to cleanly remove isDraggingOver/placeholder after a drop.
    * @param {string} id - Task ID
    * @param {string} column - Target column ID
    * @returns {Promise<{ success: boolean, task?: Object, error?: string }>}
    */
   const moveTask = useCallback(
     (id, column) => {
-      // Perform optimistic update locally
-      dispatch({ type: "OPTIMISTIC_TASK_MOVED", payload: { id, column } });
-
       return new Promise((resolve) => {
         if (!socket?.connected) {
           resolve({ success: false, error: "Not connected to server." });

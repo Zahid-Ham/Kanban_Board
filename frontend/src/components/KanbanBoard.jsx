@@ -2,9 +2,21 @@
  * components/KanbanBoard.jsx
  * Main Kanban board component. Orchestrates columns, drag-and-drop,
  * task modals, WebSocket connection, and the progress chart.
+ *
+ * Drag-and-drop design note:
+ * React 18+ uses automatic batching, which means state updates inside
+ * onDragEnd are not committed to the DOM until after the current task
+ * completes. @hello-pangea/dnd needs the DOM to reflect the drop result
+ * BEFORE it starts its drop animation, otherwise the animation clone gets
+ * stuck and isDraggingOver never resets.
+ *
+ * Fix: wrap the displayTasks update in flushSync() so React commits the DOM
+ * synchronously inside the onDragEnd callback. This is the documented fix
+ * for @hello-pangea/dnd + React 18/19.
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { useSocket } from "../hooks/useSocket";
 import { useTasks } from "../hooks/useTasks";
@@ -23,6 +35,29 @@ function KanbanBoard() {
   const { tasks, isLoading, createTask, updateTask, moveTask, deleteTask } = useTasks({
     socket,
   });
+
+  /**
+   * displayTasks — the single source of truth for rendering.
+   *
+   * Why a separate state?
+   * @hello-pangea/dnd's internal cleanup (removing isDraggingOver highlight,
+   * collapsing the placeholder space) happens synchronously inside the same
+   * React batch as the onDragEnd call. If we update `tasks` through a socket
+   * roundtrip (async), the library finishes its cleanup BEFORE our data changes,
+   * leaving the old column layout in the DOM → the "stuck" blue border / ghost
+   * space bug.
+   *
+   * By updating displayTasks synchronously in onDragEnd, React batches our
+   * state change WITH the library's cleanup into one paint — no stuck state.
+   */
+  const [displayTasks, setDisplayTasks] = useState([]);
+
+  // Keep displayTasks in sync with authoritative server state.
+  // This handles: initial load, task creates/deletes from any client,
+  // and the server's confirmation of our own move (idempotent, no flash).
+  useEffect(() => {
+    setDisplayTasks(tasks);
+  }, [tasks]);
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -69,16 +104,42 @@ function KanbanBoard() {
   // ── Drag & Drop ─────────────────────────────────────────────────────────────
   const handleDragEnd = useCallback(
     (result) => {
-      const { draggableId, destination } = result;
-      if (!destination) return; // Dropped outside a column
+      const { draggableId, destination, source } = result;
+
+      // Dropped outside any droppable
+      if (!destination) return;
 
       const targetColumn = destination.droppableId;
-      const task = tasks.find((t) => t.id === draggableId);
-      if (!task || task.column === targetColumn) return; // No change
+      const sourceColumn = source.droppableId;
 
+      // Dropped back in the same column — nothing to do
+      if (targetColumn === sourceColumn) return;
+
+      // ── THE FIX: flushSync ────────────────────────────────────────────────
+      // React 18+ automatically batches state updates, meaning setDisplayTasks
+      // would NOT be committed to the DOM until AFTER the current JS task
+      // completes. But @hello-pangea/dnd starts its drop animation immediately
+      // after onDragEnd returns, reading DOM positions to calculate the
+      // animation path. If the DOM hasn't been updated yet (card still in old
+      // column), the animation target is wrong and the drag clone gets "stuck".
+      //
+      // flushSync forces React to synchronously flush the update to the real
+      // DOM BEFORE onDragEnd returns, so the library reads the correct DOM
+      // layout and the animation plays correctly every time.
+      flushSync(() => {
+        setDisplayTasks((prev) =>
+          prev.map((t) =>
+            t.id === draggableId ? { ...t, column: targetColumn } : t
+          )
+        );
+      });
+
+      // Fire-and-forget: persist the move on the server.
+      // The server echoes task:moved back; useEffect re-syncs displayTasks
+      // from tasks — idempotent, no visible flash.
       moveTask(draggableId, targetColumn);
     },
-    [tasks, moveTask]
+    [moveTask]
   );
 
   // ── Loading State ───────────────────────────────────────────────────────────
@@ -119,8 +180,8 @@ function KanbanBoard() {
         </div>
       )}
 
-      {/* Progress Chart */}
-      <TaskProgressChart tasks={tasks} />
+      {/* Progress Chart — uses displayTasks for live count accuracy */}
+      <TaskProgressChart tasks={displayTasks} />
 
       {/* Kanban Columns */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -129,7 +190,7 @@ function KanbanBoard() {
             <KanbanColumn
               key={col.id}
               column={col}
-              tasks={filterTasksByColumn(tasks, col.id)}
+              tasks={filterTasksByColumn(displayTasks, col.id)}
               onEditTask={openEditModal}
               onDeleteTask={handleDeleteTask}
               onAddTask={openCreateModal}

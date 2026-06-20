@@ -452,8 +452,6 @@ body {
   box-shadow: var(--shadow-lg), var(--shadow-glow);
   border-color: var(--accent-indigo);
   opacity: 0.95;
-  /* Disable transition entirely during dragging for instant response and smooth tracking */
-  transition: none !important;
 }
 
 /* Priority accent bar */
