@@ -167,7 +167,9 @@ app.post("/upload", (req, res) => {
   });
 });
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
+// ─── Health Check & Keep-Alive Endpoints ──────────────────────────────────────
+app.get("/", (_req, res) => res.json({ status: "ok", message: "Server is running" }));
+app.get("/ping", (_req, res) => res.send("pong"));
 app.get("/health", (_req, res) => res.json({ status: "ok", taskCount: tasks.size }));
 
 // ─── WebSocket Events ─────────────────────────────────────────────────────────
