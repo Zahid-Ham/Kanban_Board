@@ -157,7 +157,9 @@ app.post("/upload", (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file provided." });
     }
-    const fileUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const host = req.get("host");
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
     return res.status(200).json({
       url: fileUrl,
       name: req.file.originalname,

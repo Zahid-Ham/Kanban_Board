@@ -7,7 +7,8 @@
 import React, { useRef, useState } from "react";
 import { ALLOWED_FILE_TYPES, formatFileSize, isImageType } from "../utils/taskUtils";
 
-const UPLOAD_URL = "http://localhost:5000/upload";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const UPLOAD_URL = `${BACKEND_URL}/upload`;
 
 /**
  * @param {{
