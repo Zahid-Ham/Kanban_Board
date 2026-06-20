@@ -28,10 +28,11 @@ const COLUMN_ICONS = {
  *   tasks: Object[],
  *   onEditTask: (task: Object) => void,
  *   onDeleteTask: (id: string) => void,
- *   onAddTask: (columnId: string) => void
+ *   onAddTask: (columnId: string) => void,
+ *   onViewTask: (task: Object) => void
  * }} props
  */
-function KanbanColumn({ column, tasks, onEditTask, onDeleteTask, onAddTask }) {
+function KanbanColumn({ column, tasks, onEditTask, onDeleteTask, onAddTask, onViewTask }) {
   const color = COLUMN_COLORS[column.id] || "#6366f1";
   const icon = COLUMN_ICONS[column.id] || "📋";
 
@@ -90,6 +91,7 @@ function KanbanColumn({ column, tasks, onEditTask, onDeleteTask, onAddTask }) {
                 index={index}
                 onEdit={onEditTask}
                 onDelete={onDeleteTask}
+                onView={onViewTask}
               />
             ))}
             {provided.placeholder}

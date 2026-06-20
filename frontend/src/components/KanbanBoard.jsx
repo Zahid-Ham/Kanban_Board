@@ -23,6 +23,7 @@ import { useTasks } from "../hooks/useTasks";
 import { COLUMNS, filterTasksByColumn } from "../utils/taskUtils";
 import KanbanColumn from "./KanbanColumn";
 import TaskModal from "./TaskModal";
+import TaskDetailModal from "./TaskDetailModal";
 import TaskProgressChart from "./TaskProgressChart";
 import ConnectionStatus from "./ConnectionStatus";
 
@@ -65,6 +66,14 @@ function KanbanBoard() {
     initialData: null,
   });
 
+  const [detailModalState, setDetailModalState] = useState({
+    isOpen: false,
+    task: null,
+  });
+
+  // Get dynamic updated reference of the currently viewed task for real-time WebSocket sync
+  const activeDetailTask = displayTasks.find((t) => t.id === detailModalState.task?.id) || detailModalState.task;
+
   // ── Modal Handlers ──────────────────────────────────────────────────────────
   const openCreateModal = useCallback((columnId = "todo") => {
     setModalState({
@@ -80,6 +89,14 @@ function KanbanBoard() {
 
   const closeModal = useCallback(() => {
     setModalState((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  const openDetailModal = useCallback((task) => {
+    setDetailModalState({ isOpen: true, task });
+  }, []);
+
+  const closeDetailModal = useCallback(() => {
+    setDetailModalState({ isOpen: false, task: null });
   }, []);
 
   // ── Task CRUD ───────────────────────────────────────────────────────────────
@@ -194,6 +211,7 @@ function KanbanBoard() {
               onEditTask={openEditModal}
               onDeleteTask={handleDeleteTask}
               onAddTask={openCreateModal}
+              onViewTask={openDetailModal}
             />
           ))}
         </div>
@@ -206,6 +224,15 @@ function KanbanBoard() {
         initialData={modalState.initialData}
         onClose={closeModal}
         onSubmit={handleSubmitTask}
+      />
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        isOpen={detailModalState.isOpen}
+        task={activeDetailTask}
+        onClose={closeDetailModal}
+        onEdit={openEditModal}
+        onDelete={handleDeleteTask}
       />
     </div>
   );

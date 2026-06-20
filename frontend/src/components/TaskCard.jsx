@@ -5,7 +5,7 @@
  * attachment count, and edit/delete actions.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { getPriorityConfig, getCategoryConfig } from "../utils/taskUtils";
 
@@ -14,13 +14,27 @@ import { getPriorityConfig, getCategoryConfig } from "../utils/taskUtils";
  *   task: Object,
  *   index: number,
  *   onEdit: (task: Object) => void,
- *   onDelete: (id: string) => void
+ *   onDelete: (id: string) => void,
+ *   onView: (task: Object) => void
  * }} props
  */
-function TaskCard({ task, index, onEdit, onDelete }) {
+function TaskCard({ task, index, onEdit, onDelete, onView }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLanded, setIsLanded] = useState(false);
+  const prevColumnRef = useRef(task.column);
+
   const priority = getPriorityConfig(task.priority);
   const category = getCategoryConfig(task.category);
+
+  // Trigger a landing animation if the task column changes
+  useEffect(() => {
+    if (prevColumnRef.current !== task.column) {
+      setIsLanded(true);
+      prevColumnRef.current = task.column;
+      const timer = setTimeout(() => setIsLanded(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [task.column]);
 
   const handleDelete = () => {
     if (showConfirm) {
@@ -40,7 +54,8 @@ function TaskCard({ task, index, onEdit, onDelete }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           style={provided.draggableProps.style}
-          className={`task-card ${snapshot.isDragging ? "dragging" : ""}`}
+          onClick={() => onView && onView(task)}
+          className={`task-card ${snapshot.isDragging ? "dragging" : ""} ${isLanded ? "landed-pulse" : ""}`}
           data-testid="task-card"
           data-task-id={task.id}
           aria-label={`Task: ${task.title}`}
@@ -94,7 +109,10 @@ function TaskCard({ task, index, onEdit, onDelete }) {
             <button
               type="button"
               className="task-action-btn edit-btn"
-              onClick={() => onEdit(task)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
               aria-label={`Edit task: ${task.title}`}
               data-testid="edit-task-btn"
             >
@@ -103,7 +121,10 @@ function TaskCard({ task, index, onEdit, onDelete }) {
             <button
               type="button"
               className={`task-action-btn delete-btn ${showConfirm ? "confirm" : ""}`}
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete();
+              }}
               aria-label={showConfirm ? "Confirm delete" : `Delete task: ${task.title}`}
               data-testid="delete-task-btn"
               title={showConfirm ? "Click again to confirm" : "Delete task"}
